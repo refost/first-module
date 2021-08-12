@@ -1,0 +1,7 @@
+guestBook.comments:
+  path: '/guest-book/comments'
+  defaults:
+    _title: 'Hello! You can add here a photo of your cat.'
+    _controller: 'Drupal\guestBook\Controller\CommentController::content'
+  requirements:
+    _permission: 'access content'
