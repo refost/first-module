@@ -1,24 +1,52 @@
 {{ form }}
 
+{# display block with comments #}
 <div class="comments">
   {% for comment in data %}
-  <div class="comment-block">
-    <div class="user">
-      <span class="date">{{ comment['date'] }}</span>
-    </div>
-    <div class="comment">
-      <div class="contacts">
-        <div class="tel">
-          <span class="title">Telephone:</span>
-          <span class="phone">{{ comment['phone'] }}</span>
+    <div class="comment-block">
+
+      {# block with Avatar and data #}
+
+      <div class="user">
+        <div class="avatar">
+          {{ comment['avatar'] }}
         </div>
-        <div class="post">
-          <span class="title">Telephone:</span>
-          <span class="email">{{ comment['email'] }}</span>
+        <span class="name">{{ comment['name'] }}</span>
+        <span class="date">{{ comment['date'] }}</span>
+      </div>
+      <div class="comment">
+
+        {# block with contacts #}
+
+        <div class="contacts">
+          <div class="tel">
+            <span class="title">Telephone:</span>
+            <span class="phone">{{ comment['phone'] }}</span>
+          </div>
+          <div class="post">
+            <span class="title">Telephone:</span>
+            <span class="email">{{ comment['email'] }}</span>
+          </div>
+
+          {# administrative buutons #}
+
+          {% if user.hasPermission('administer nodes') %}
+            <div class="manage">
+              {{ comment['delete'] }}
+              {{ comment['edit'] }}
+            </div>
+          {% endif %}
+        </div>
+
+        {# block with comment text #}
+
+        <div class="comment-text">
+          {% if comment['image']['data'] is not null %}
+            <div class="picture"> {{ comment['image'] }} </div>
+          {% endif %}
+          <p>{{ comment['comment'] }}</p>
         </div>
       </div>
-      <div class="comment-text">{{ comment['comment'] }}</div>
     </div>
-  </div>
   {% endfor %}
 </div>

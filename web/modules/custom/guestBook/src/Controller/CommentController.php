@@ -3,36 +3,39 @@
 namespace Drupal\guestBook\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-
+use Drupal\file\Entity\File;
+use Drupal\Core\Url;
 class CommentController extends ControllerBase{
+
 
   /**
    * Create table with cats.
    */
   public function table():array {
     $query = \Drupal::database()->select('guest_book', 'comment');
-    $query->fields('comment', ['name', 'email', 'phone', 'comment', 'date']);
+    $query->fields('comment', ['id','name', 'email', 'phone', 'comment', 'date', 'image' , 'avatar']);
     $results = $query->execute()->fetchAll();
     $commment = [];
     foreach ($results as $data) {
-//      $fid = $data->image;
-//      $file = File::load($fid);
-//      $path = $file->getFileUri();
-//
-//      $image_render = [
-//        '#theme' => 'image_style',
-//        '#style_name' => 'thumbnail',
-//        '#uri' => $path,
-//      ];
+      $image = $this->isImage($data->image);
+      $avatar = $this->isImage($data->avatar);
+
+      $url_delete = Url::fromRoute('guestBook.delete', ['id' => $data->id], []);
+      $linkDelete = $this->linkCreate('Delete', $url_delete);
+
+      $url_edit = Url::fromRoute('guestBook.edit', ['id' => $data->id], []);
+      $linkEdit = $this->linkCreate('Edit', $url_edit);
 
       $commment[] = [
         'name' => $data->name,
         'email' => $data->email,
         'phone' => $data->phone,
         'comment' => $data->comment,
-//        'avatar' => ['data' => $image_render],
-//        'avatar' => ['data' => $image_render],
+        'image' => ['data' => $image],
+        'avatar' => ['data' => $avatar],
         'date' => date('Y-m-d', $data->date),
+        'delete' =>  $linkDelete,
+        'edit' =>  $linkEdit,
       ];
     }
 
@@ -40,7 +43,7 @@ class CommentController extends ControllerBase{
       krsort($commment);
     }
 
-    var_dump($commment);
+    var_dump($image);
 
     return $commment;
   }
@@ -58,6 +61,40 @@ class CommentController extends ControllerBase{
     ];
   }
 
+  public function isImage($image){
+    if ($image != NULL) {
+      $file = File::load($image);
+      $path = $file->getFileUri();
 
+      $image_render = [
+        '#theme' => 'image',
+        '#uri' => $path,
+        '#attributes' => [
+          'alt' => 'picture',
+          'width' => 250,
+          'height' => 250
+        ]
+      ];
+    } else {
+      $image_render = NULL;
+    }
+    return $image_render;
+  }
+
+
+  public function linkCreate($title, $link):array {
+    return [
+      '#type' => 'link',
+      '#title' => $title,
+      '#url' => $link,
+//      '#options' => [
+//        'attributes' => [
+//          'class' => ['use-ajax'],
+//          'data-dialog-type' => 'modal',
+//        ],
+//      ],
+//      '#attached' => ['library' => ['core/drupal.dialog.ajax']],
+    ];
+  }
 
 }

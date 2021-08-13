@@ -5,3 +5,19 @@ guestBook.comments:
     _controller: 'Drupal\guestBook\Controller\CommentController::content'
   requirements:
     _permission: 'access content'
+
+guestBook.delete:
+  path: '/admin/guest-book/{id}/delete'
+  defaults:
+    _title: 'Deleting comment'
+    _form: 'Drupal\guestBook\Form\DeleteForm'
+  requirements:
+    _permission: 'administer site configuration'
+
+guestBook.edit:
+  path: '/admin/guest-book/{id}/edit'
+  defaults:
+    _title: 'Deleting comment'
+    _form: 'Drupal\guestBook\Form\EditForm'
+  requirements:
+    _permission: 'administer site configuration'
