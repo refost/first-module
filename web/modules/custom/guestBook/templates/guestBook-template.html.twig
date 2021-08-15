@@ -41,7 +41,7 @@
         {# block with comment text #}
 
         <div class="comment-text">
-          {% if comment['image']['data'] is not null %}
+          {% if comment['image'] is not null %}
             <div class="picture"> {{ comment['image'] }} </div>
           {% endif %}
           <p>{{ comment['comment'] }}</p>

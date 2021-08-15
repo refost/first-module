@@ -11,16 +11,17 @@ use Drupal\Core\Url;
  */
 class DeleteForm extends ConfirmFormBase {
 
-public $id;
+  /**
+   * Contain id of comment.
+   */
+  public $id;
 
-/**
- * {@inheritdoc}
- */
-public
-function getFormId(): string
-{
-  return 'delete_form';
-}
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormId():string {
+    return 'delete_form';
+  }
 
   /**
    * {@inheritdoc}
@@ -29,40 +30,33 @@ function getFormId(): string
     return t('Delete data');
   }
 
-/**
- * {@inheritdoc}
- */
-public
-function getCancelUrl(): object
-{
-  return new Url('guestBook.comments');
-}
+  /**
+   * {@inheritdoc}
+   */
+  public function getCancelUrl():object {
+    return new Url('guestBook.comments');
+  }
 
-/**
- * {@inheritdoc}
- */
-public
-function getDescription(): object
-{
-  return t('Are you sure?');
-}
+  /**
+   * {@inheritdoc}
+   */
+  public function getDescription():object {
+    return t('Are you sure?');
+  }
 
-/**
- * {@inheritdoc}
- */
-public
-function getConfirmText(): object
-{
-  return t('Delete it!');
-}
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfirmText():object {
+    return t('Delete it!');
+  }
 
-/**
- * {@inheritdoc}
- */
-public function getCancelText(): object
-{
-  return t('Cancel');
-}
+  /**
+   * {@inheritdoc}
+   */
+  public function getCancelText(): object {
+    return t('Cancel');
+  }
 
   public function buildForm(array $form, FormStateInterface $form_state, $id = NULL):array {
     $this->id = $id;
@@ -77,24 +71,41 @@ public function getCancelText(): object
   }
 
   /**
-   * Function delete record and change file status.
+   * The function changes the status of deleted files.
+   */
+  public function changStatus($image) {
+    if ($image != NULL) {
+
+      $fid = intval($image);
+
+      \Drupal::database()
+        ->update('file_managed')
+        ->fields(['status' => 0])
+        ->condition('fid', $fid)->execute();
+    }
+  }
+
+  /**
+   * On submit form delete record.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $database = \Drupal::database();
 
-//    $num = $this->id;
+    $num = $this->id;
 
-//    $query = $database->select('tarik', 'cats');
-//    $result = $query->condition('id', $num)
-//      ->fields('cats', ['id', 'image'])
-//      ->execute()->fetch();
-//
-//    $result = json_decode(json_encode($result), TRUE);
-//    $fid = intval($result['image']);
-//
-//    $database->update('file_managed')
-//      ->fields(['status' => 0])
-//      ->condition('fid', $fid)->execute();
+    $query = $database->select('guest_book', 'comment');
+    $result = $query->condition('id', $num)
+      ->fields('comment', [
+        'id',
+        'image',
+        'avatar',
+      ])
+      ->execute()->fetch();
+
+    $result = json_decode(json_encode($result), TRUE);
+    $this->changStatus($result['image']);
+    $this->changStatus($result['avatar']);
+
 
     $database->delete('guest_book')
       ->condition('id', $this->id)

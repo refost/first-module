@@ -12,30 +12,40 @@ use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\file\Entity\File;
 use Drupal\Core\Url;
 
+/**
+ * Class EditForm that edit form.
+ */
 class EditForm extends FormBase {
 
+  /**
+   * Contain id of comment.
+   */
   public $fid;
 
+  /**
+   * {@inheritDoc}
+   */
   public function getFormId(): string {
     return 'form_edit_comment';
   }
 
   /**
-   * Build form for cat info.
+   * Build form with default data for editing.
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
 
     $id = \Drupal::routeMatch()->getParameter('id');
 
     $database = Database::getConnection();
-    $data = [];
     $query = $database->select('guest_book', 'comments')
       ->condition('id', $id)
       ->fields('comments');
     $data = $query->execute()->fetchAssoc();
 
-    $this->fid = [ 'image' => $data['image'],
-                    'avatar' => $data['avatar']];
+    $this->fid = [
+      'image' => $data['image'],
+      'avatar' => $data['avatar'],
+    ];
 
     $form['edit-name-valid'] = [
       '#type' => 'markup',
@@ -49,10 +59,10 @@ class EditForm extends FormBase {
       '#required' => TRUE,
       '#maxlength' => 100,
       '#pattern' => '^[\w+\s]{2,100}$',
-//      '#ajax' => [
-//        'callback' => '::validName',
-//        'event' => 'change',
-//      ],
+      '#ajax' => [
+        'callback' => '::validName',
+        'event' => 'change',
+      ],
     ];
 
     $form['edit_email-valid'] = [
@@ -66,10 +76,10 @@ class EditForm extends FormBase {
       '#default_value' => (isset($data['email'])) ? $data['email'] : '',
       '#required' => TRUE,
       '#pattern' => '^[\w+]{2,100}@([\w+]{2,30})\.[\w+]{2,30}$',
-//      '#ajax' => [
-//        'callback' => '::validEmail',
-//        'event' => 'change',
-//      ],
+      '#ajax' => [
+        'callback' => '::validEmail',
+        'event' => 'change',
+      ],
     ];
 
     $form['edit-phone-valid'] = [
@@ -79,13 +89,15 @@ class EditForm extends FormBase {
     $form['edit-phone'] = [
       '#type' => 'tel',
       '#title' => $this->t('Your phone:'),
-      '#placeholder' => $this->t('000 00 000 0000'),
+      '#placeholder' => '123 45 6789 1011',
+      '#description' => $this->t('This field is required'),
       '#default_value' => (isset($data['phone'])) ? $data['phone'] : '',
       '#pattern' => '^[0-9]{12}$',
-//      '#ajax' => [
-//        'callback' => '::validPhone',
-//        'event' => 'change',
-//      ],
+      '#maxlength' => 12,
+      '#ajax' => [
+        'callback' => '::validPhone',
+        'event' => 'change',
+      ],
     ];
 
     $form['edit-comment-valid'] = [
@@ -104,7 +116,7 @@ class EditForm extends FormBase {
       '#type' => 'managed_file',
       '#title' => t('Your avatar'),
       '#upload_location' => 'public://images/avatars/',
-      '#default_value' => (isset($data['avatar'])) ? $data['avatar'] : [],
+      '#default_value' => (isset($data['avatar'])) ? [$data['avatar']] : [],
       '#upload_validators' => [
         'file_validate_extensions' => ['png jpg jpeg'],
         'file_validate_size' => [2097152],
@@ -115,7 +127,7 @@ class EditForm extends FormBase {
       '#type' => 'managed_file',
       '#title' => t('Picture to comment'),
       '#upload_location' => 'public://images/pictures/',
-      '#default_value' => (isset($data['image'])) ? $data['image'] : [],
+      '#default_value' => (isset($data['image'])) ? [$data['image']] : [],
       '#upload_validators' => [
         'file_validate_extensions' => ['png jpg jpeg'],
         'file_validate_size' => [5242880],
@@ -129,15 +141,18 @@ class EditForm extends FormBase {
     $form['edit-submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Add comment'),
-//      '#ajax' => [
-//        'callback' => '::setMessage',
-//        'event' => 'click',
-//      ],
+      '#ajax' => [
+        'callback' => '::setMessage',
+        'event' => 'click',
+      ],
     ];
 
     return $form;
   }
 
+  /**
+   * Function that validate name and display message with status of inputed data.
+   */
   public function validName(array &$form, FormStateInterface $form_state) {
     $regular = '/^[\w+\s]{2,100}$/';
     $name = $form_state->getValue('edit-name');
@@ -154,7 +169,8 @@ class EditForm extends FormBase {
       $response->addCommand(
         new CssCommand('#edit-name', ['border-color' => 'red'])
       );
-    } else {
+    }
+    else {
       $response->AddCommand(
         new HtmlCommand(
           '#edit_name_message',
@@ -169,7 +185,10 @@ class EditForm extends FormBase {
     return $response;
   }
 
-  public function validEmail(array &$form, FormStateInterface $form_state) {
+  /**
+   * Function that validate email and display message with status of inputed data.
+   */
+  public function validEmail(array &$form, FormStateInterface $form_state):object {
     $email = $form_state->getValue('edit-email');
     $regular = '/^[\w+]{2,100}@([\w+]{2,30})\.[\w+]{2,30}$/';
 
@@ -185,7 +204,8 @@ class EditForm extends FormBase {
       $response->addCommand(
         new CssCommand('#edit-email', ['border-color' => 'red'])
       );
-    } else {
+    }
+    else {
       $response->AddCommand(
         new HtmlCommand(
           '#edit_email_message',
@@ -200,12 +220,44 @@ class EditForm extends FormBase {
     return $response;
   }
 
-  public function validPhone(array &$form, FormStateInterface $form_state) {
-    $email = $form_state->getValue('edit-phone');
+  /**
+   * Function that convert number in easy form.
+   */
+  public function userPhone($phone):string {
+
+    $userPhone = '+';
+    $length = strlen($phone);
+
+    for ($i = 0; $i <= $length; $i++) {
+      switch ($i) {
+        case 2:
+          $userPhone .= '(' . $phone[$i];
+          break;
+
+        case 4:
+          $userPhone .= $phone[$i] . ')-';
+          break;
+
+        case 7:
+          $userPhone .= $phone[$i] . '-';
+          break;
+
+        default:
+          $userPhone .= $phone[$i];
+      }
+    }
+    return $userPhone;
+  }
+
+  /**
+   * Function that validate зрщту and display message with status of inputed data.
+   */
+  public function validPhone(array &$form, FormStateInterface $form_state):object {
+    $phone = $form_state->getValue('edit-phone');
     $regular = '/^[0-9]{12}$/';
 
     $response = new AjaxResponse();
-    if (!preg_match($regular, $email)) {
+    if (!preg_match($regular, $phone)) {
       $response->AddCommand(
         new HtmlCommand(
           '#edit_phone_message',
@@ -216,12 +268,13 @@ class EditForm extends FormBase {
       $response->addCommand(
         new CssCommand('#edit-phone', ['border-color' => 'red'])
       );
-    } else {
+    }
+    else {
       $response->AddCommand(
         new HtmlCommand(
           '#edit_phone_message',
           '<div class="correct-message">'
-          . $this->t('You phone is correct')
+          . $this->t('You phone is') . ' ' . $this->userPhone($phone)
         )
       );
       $response->addCommand(
@@ -231,7 +284,10 @@ class EditForm extends FormBase {
     return $response;
   }
 
-  public function setMessage(array &$form, FormStateInterface $form_state) {
+  /**
+   * Function check form on errors.
+   */
+  public function setMessage(array &$form, FormStateInterface $form_state):object {
 
     $response = new AjaxResponse();
     if ($form_state->hasAnyErrors()) {
@@ -242,35 +298,38 @@ class EditForm extends FormBase {
           . $this->t('Please enter correct information.')
         )
       );
-    } else {
-      $response->AddCommand(
-        new HtmlCommand(
-          '#edit_result_message',
-          '<div class="correct-message">'
-          . $this->t('Thanks for your comment')
-        )
-      );
     }
-    \Drupal::messenger()->deleteAll();
+    else {
+      \Drupal::messenger()->deleteAll();
+      \Drupal::messenger()->addStatus(t('Comment was edited'));
+      $response->addCommand(new RedirectCommand('\guest-book\comments'));
+    }
+
     return $response;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public function validateForm(array &$form, FormStateInterface $form_state) {
   }
 
-//  public function isImage($image){
-//    if ($image != NULL) {
-//      $file = File::load($image[0]);
-//      $file->setPermanent();
-//      $file->save();
-//    }
-//  }
+  /**
+   * Function save file if it not null.
+   */
+  public function saveImage($picture) {
+    if ($picture != NULL) {
+      $file = File::load($picture[0]);
+      $file->setPermanent();
+      $file->save();
+    }
+  }
 
   /**
    * Function change status image in file_managed table if image was changed.
    */
-  public function changStatus($currId, $NewId) {
-    if ($NewId != $currId){
+  public function changStatus($newId, $currId) {
+    if ($newId != $currId) {
       \Drupal::database()
         ->update('file_managed')
         ->fields(['status' => 0])
@@ -278,26 +337,34 @@ class EditForm extends FormBase {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    $fid = $this ->fid;
+    $fid = $this->fid;
 
-//    $picture = $form_state->getValue('picture');
-//    $avatar = $form_state->getValue('avatar');
+    $picture = $form_state->getValue('edit-picture');
+    $avatar = $form_state->getValue('edit-avatar');
 
     $data = [
       'name' => $form_state->getValue('edit-name'),
       'email' => $form_state->getValue('edit-email'),
       'phone' => $form_state->getValue('edit-phone'),
       'comment' => $form_state->getValue('edit-comment'),
-//      'avatar' => $avatar[0],
-//      'image' => $picture[0],
+      'avatar' => $avatar[0],
+      'image' => $picture[0],
     ];
 
     $id = \Drupal::routeMatch()->getParameter('id');
 
-//    $this->changStatus($picture,$fid['image']);
+    $this->saveImage($picture);
+    $this->saveImage($avatar);
 
+    $this->changStatus($picture, $fid['image']);
+    $this->changStatus($avatar, $fid['avatar']);
+
+    // Update data in database.
     \Drupal::database()
       ->update('guest_book')
       ->fields($data)
@@ -306,4 +373,3 @@ class EditForm extends FormBase {
   }
 
 }
-

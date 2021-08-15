@@ -5,20 +5,66 @@ namespace Drupal\guestBook\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\file\Entity\File;
 use Drupal\Core\Url;
-class CommentController extends ControllerBase{
 
+/**
+ * Controller that use this class controll works of form.
+ */
+class CommentController extends ControllerBase {
 
   /**
-   * Create table with cats.
+   * The function passes data to display.
    */
-  public function table():array {
-    $query = \Drupal::database()->select('guest_book', 'comment');
-    $query->fields('comment', ['id','name', 'email', 'phone', 'comment', 'date', 'image' , 'avatar']);
-    $results = $query->execute()->fetchAll();
+  public function content():array {
+
+    $form = \Drupal::formBuilder()->getForm('Drupal\guestBook\Form\AddCommentForm');
+
+    $data = $this->getComments();
+
+    return [
+      '#theme' => 'guestBook_template',
+      '#form' => $form,
+      '#data' => $data,
+    ];
+  }
+
+  /**
+   * Create data that will be displayed.
+   */
+  public function getComments():array {
+
+    // Connect to database and select fields.
+    $results = \Drupal::database()
+      ->select('guest_book', 'comment')
+      ->fields('comment', [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'comment',
+        'date',
+        'image',
+        'avatar',
+      ])
+      ->execute()->fetchAll();
+
+    // Creating array from database.
     $commment = [];
     foreach ($results as $data) {
-      $image = $this->isImage($data->image);
-      $avatar = $this->isImage($data->avatar);
+      $image = $this->getImage($data->image);
+      $avatar = $this->getImage($data->avatar);
+
+      // If there is no image then default is used.
+      if ($avatar == NULL) {
+        $avatar = [
+          '#theme' => 'image',
+          '#uri' => '/modules/custom/guestBook/files/User_Icon.png',
+          '#attributes' => [
+            'alt' => 'picture',
+            'width' => 250,
+            'height' => 250,
+          ],
+        ];
+      }
 
       $url_delete = Url::fromRoute('guestBook.delete', ['id' => $data->id], []);
       $linkDelete = $this->linkCreate('Delete', $url_delete);
@@ -31,11 +77,11 @@ class CommentController extends ControllerBase{
         'email' => $data->email,
         'phone' => $data->phone,
         'comment' => $data->comment,
-        'image' => ['data' => $image],
-        'avatar' => ['data' => $avatar],
+        'image' => $image,
+        'avatar' => $avatar,
         'date' => date('Y-m-d', $data->date),
-        'delete' =>  $linkDelete,
-        'edit' =>  $linkEdit,
+        'delete' => $linkDelete,
+        'edit' => $linkEdit,
       ];
     }
 
@@ -43,57 +89,48 @@ class CommentController extends ControllerBase{
       krsort($commment);
     }
 
-    var_dump($image);
-
     return $commment;
   }
 
-
-  public function content():array{
-    $form = \Drupal::formBuilder()->getForm('Drupal\guestBook\Form\AddCommentForm');
-
-    $data = $this->table();
-
-    return [
-      '#theme' => 'guestBook_template',
-      '#form' => $form,
-      '#data' => $data,
-    ];
-  }
-
-  public function isImage($image){
+  /**
+   * Function get image if it not null then renderer array is created.
+   */
+  public function getImage($image) {
     if ($image != NULL) {
+
       $file = File::load($image);
       $path = $file->getFileUri();
-
       $image_render = [
         '#theme' => 'image',
         '#uri' => $path,
         '#attributes' => [
           'alt' => 'picture',
           'width' => 250,
-          'height' => 250
-        ]
+          'height' => 250,
+        ],
       ];
-    } else {
+    }
+    else {
       $image_render = NULL;
     }
     return $image_render;
   }
 
-
+  /**
+   * Function get text and url for link and create renderer array.
+   */
   public function linkCreate($title, $link):array {
     return [
       '#type' => 'link',
       '#title' => $title,
       '#url' => $link,
-//      '#options' => [
-//        'attributes' => [
-//          'class' => ['use-ajax'],
-//          'data-dialog-type' => 'modal',
-//        ],
-//      ],
-//      '#attached' => ['library' => ['core/drupal.dialog.ajax']],
+      '#options' => [
+        'attributes' => [
+          'class' => ['use-ajax'],
+          'data-dialog-type' => 'modal',
+        ],
+      ],
+      '#attached' => ['library' => ['core/drupal.dialog.ajax']],
     ];
   }
 
