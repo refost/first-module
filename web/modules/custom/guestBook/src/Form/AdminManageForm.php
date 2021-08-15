@@ -51,7 +51,7 @@ class AdminManageForm extends FormBase {
       $rows[$row->id] = [
         'name' => $row->name,
         'email' => $row->email,
-        'phone' => $row->phone,
+        'phone' => $this->userPhone($row->phone),
         'comment' => $row->comment,
         'image' => ['data' => $image],
         'avatar' => ['data' => $avatar],
@@ -67,6 +67,34 @@ class AdminManageForm extends FormBase {
 
     return $rows;
 
+  }
+
+  /**
+   * Function that convert number in easy form.
+   */
+  public function userPhone($phone):string {
+    $userPhone = '+';
+    $length = strlen($phone);
+
+    for ($i = 0; $i < $length; $i++) {
+      switch ($i) {
+        case 2:
+          $userPhone .= '(' . $phone[$i];
+          break;
+
+        case 4:
+          $userPhone .= $phone[$i] . ')-';
+          break;
+
+        case 7:
+          $userPhone .= $phone[$i] . '-';
+          break;
+
+        default:
+          $userPhone .= $phone[$i];
+      }
+    }
+    return $userPhone;
   }
 
   /**

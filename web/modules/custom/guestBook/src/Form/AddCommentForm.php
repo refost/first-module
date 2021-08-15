@@ -202,7 +202,7 @@ class AddCommentForm extends FormBase {
     $userPhone = '+';
     $length = strlen($phone);
 
-    for ($i = 0; $i <= $length; $i++) {
+    for ($i = 0; $i < $length; $i++) {
       switch ($i) {
         case 2:
           $userPhone .= '(' . $phone[$i];
@@ -263,7 +263,7 @@ class AddCommentForm extends FormBase {
    * Function check form on errors.
    */
   public function setMessage(array &$form, FormStateInterface $form_state):object {
-
+    \Drupal::messenger()->deleteAll();
     $response = new AjaxResponse();
     if ($form_state->hasAnyErrors()) {
       $response->AddCommand(
@@ -275,7 +275,6 @@ class AddCommentForm extends FormBase {
       );
     }
     else {
-      \Drupal::messenger()->deleteAll();
       \Drupal::messenger()->addStatus(t('Thanks for sending. You can see your comment in down'));
       $response->addCommand(new RedirectCommand('\guest-book\comments'));
     }

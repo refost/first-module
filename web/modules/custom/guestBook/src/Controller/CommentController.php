@@ -72,14 +72,16 @@ class CommentController extends ControllerBase {
       $url_edit = Url::fromRoute('guestBook.edit', ['id' => $data->id], []);
       $linkEdit = $this->linkCreate('Edit', $url_edit);
 
+      $phone = $this->userPhone($data->phone);
+
       $commment[] = [
         'name' => $data->name,
         'email' => $data->email,
-        'phone' => $data->phone,
+        'phone' => $phone,
         'comment' => $data->comment,
         'image' => $image,
         'avatar' => $avatar,
-        'date' => date('Y-m-d', $data->date),
+        'date' => date('Y-m-d H:i:s', $data->date),
         'delete' => $linkDelete,
         'edit' => $linkEdit,
       ];
@@ -114,6 +116,34 @@ class CommentController extends ControllerBase {
       $image_render = NULL;
     }
     return $image_render;
+  }
+
+  /**
+   * Function that convert number in easy form.
+   */
+  public function userPhone($phone):string {
+    $userPhone = '+';
+    $length = strlen($phone);
+
+    for ($i = 0; $i < $length; $i++) {
+      switch ($i) {
+        case 2:
+          $userPhone .= '(' . $phone[$i];
+          break;
+
+        case 4:
+          $userPhone .= $phone[$i] . ')-';
+          break;
+
+        case 7:
+          $userPhone .= $phone[$i] . '-';
+          break;
+
+        default:
+          $userPhone .= $phone[$i];
+      }
+    }
+    return $userPhone;
   }
 
   /**
